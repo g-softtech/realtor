@@ -31,6 +31,9 @@ const getPropertyById = async (req, res) => {
 // @desc    Create a property
 // @route   POST /api/properties
 // @access  Private/Admin
+// @desc    Create a property
+// @route   POST /api/properties
+// @access  Private/Admin
 const createProperty = async (req, res) => {
   try {
     const { title, description, price, location, type, status, images } = req.body;
@@ -48,6 +51,8 @@ const createProperty = async (req, res) => {
     const createdProperty = await property.save();
     res.status(201).json(createdProperty);
   } catch (error) {
+    // 🚀 This line will print the exact missing field or validation error in your terminal!
+    console.error("❌ DB SAVE CRASH:", error); 
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
