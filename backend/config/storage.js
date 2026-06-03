@@ -2,12 +2,17 @@ const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
 
-// Configure Cloudinary with your secure environment credentials
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// 🔒 PRODUCTION SAFETY LAYER: Prevent top-level crash if environment keys aren't mounted yet
+if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+  console.warn("⚠️ CRITICAL WARNING: Cloudinary credentials are missing from process.env variables. Image uploads will fail.");
+} else {
+  // Configure Cloudinary with your secure environment credentials
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
 
 // Set up the secure remote storage folder engine
 const storage = new CloudinaryStorage({
@@ -15,7 +20,8 @@ const storage = new CloudinaryStorage({
   params: {
     folder: 'AbujaRealty_Properties', // Creates a dedicated folder inside your Cloudinary media library
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp'], // 🔒 Security: Restrict file types strictly to images
-    transformation: [{ width: 1200, crop: 'limit', quality: 'auto' }], // 📏 Media Standard: Enforces high resolution optimization
+    // 🏗️ FIXED: Fixed transformation format constraint so Multer parses the optimization parameters correctly
+    transformations: [{ width: 1200, crop: 'limit', quality: 'auto' }], // 📏 Media Standard: Enforces high resolution optimization
   },
 });
 
