@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
-
+import SkeletonCard from '../../components/ui/SkeletonCard';
+import EmptyState from '../../components/ui/EmptyState';
 interface Property {
   _id: string;
   title: string;
@@ -77,9 +78,6 @@ export default function PropertyManagement() {
       alert(err.message || "Failed to delete the asset. Please try again.");
     }
   };
-
-import SkeletonCard from '../../components/ui/SkeletonCard';
-import EmptyState from '../../components/ui/EmptyState';
 
 // Helper function to calculate how many times a property title is mentioned inside lead messages
   const getLeadCountForProperty = (propertyTitle: string) => {

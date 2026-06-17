@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
-
+import SkeletonCard from '../../components/ui/SkeletonCard';
+import EmptyState from '../../components/ui/EmptyState';
 interface Blog {
   _id: string;
   title: string;
@@ -64,9 +65,6 @@ export default function BlogManagement() {
       alert(err.message || "Failed to delete the article.");
     }
   };
-
-import SkeletonCard from '../../components/ui/SkeletonCard';
-import EmptyState from '../../components/ui/EmptyState';
 
   if (error) return <div className="p-12 text-center text-red-500 font-medium">Error: {error}</div>;
 

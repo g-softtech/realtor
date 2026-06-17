@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PropertyForm, { PropertyData } from '../../../../components/forms/PropertyForm';
-import { api } from '../../../../lib/api';
+import { api } from '../../../../../lib/api';
 
 export default function EditProperty({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
