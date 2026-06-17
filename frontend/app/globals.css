@@ -1,0 +1,5 @@
+
+@import "tailwindcss";
+
+/* 🌓 ENABLES MANUAL CLASS-TOGGLING FOR TAILWIND V4 EMITTING MATRIX */
+@custom-variant dark (&:where(.dark, .dark *));
