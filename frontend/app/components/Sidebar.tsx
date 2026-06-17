@@ -30,7 +30,6 @@ export default function Sidebar() {
   const navLinks = [
     { name: 'Overview', href: '/dashboard', icon: '📊' },
     { name: 'Properties', href: '/dashboard/properties', icon: '🏢' },
-    { name: 'Leads', href: '/dashboard/leads', icon: '👥' },
     { name: 'Blog Posts', href: '/dashboard/blogs', icon: '✍️' },
   ];
 

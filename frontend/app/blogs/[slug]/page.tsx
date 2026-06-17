@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
+import PublicNavbar from '../../components/PublicNavbar';
 
 interface BlogArticle {
   _id: string;
@@ -63,6 +64,7 @@ export default async function PublicBlogReaderPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-white text-gray-900 pb-20">
+      <PublicNavbar />
       
       {/* 🧭 Editorial Minimal Navigation Header Context */}
       <nav className="max-w-4xl mx-auto px-6 pt-8 flex items-center justify-between">

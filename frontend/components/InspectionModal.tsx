@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
+import { api } from '../lib/api';
 
 interface InspectionModalProps {
   isOpen: boolean;
@@ -25,27 +26,14 @@ export default function InspectionModal({ isOpen, onClose, propertyId, propertyT
     setLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
-      const res = await fetch(`${apiUrl}/api/leads`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, message, propertyId }),
-      });
-
-      if (res.ok) {
-        setSuccess(true);
-        setName('');
-        setEmail('');
-        setPhone('');
-      } 
-   else {
-        // 🚀 Read the precise server error message string sent from our updated backend catch block
-        const errorData = await res.json();
-        alert(`Backend Error: ${errorData.message || 'Unknown Failure'}`);
-      }
-    } catch (error) {
+      const data = await api.post('/api/leads', { name, email, phone, message, propertyId });
+      setSuccess(true);
+      setName('');
+      setEmail('');
+      setPhone('');
+    } catch (error: any) {
       console.error('Error submitting lead:', error);
-      alert('Unable to reach the backend server.');
+      alert(error.message || 'Unable to reach the backend server.');
     } finally {
       setLoading(false);
     }

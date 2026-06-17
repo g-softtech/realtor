@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { api } from '../../../lib/api';
 
 interface AnalyticsData {
   totalProperties: number;
@@ -16,12 +17,8 @@ export default function AgentAnalyticsPanel() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
-        const res = await fetch(`${apiUrl}/api/analytics/summary`, { cache: 'no-store' });
-        if (res.ok) {
-          const summary = await res.json();
-          setData(summary);
-        }
+        const summary = await api.get('/api/analytics/summary');
+        setData(summary);
       } catch (err) {
         console.error('Failed to stream analytic datasets:', err);
       } finally {

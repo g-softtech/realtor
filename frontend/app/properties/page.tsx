@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
+import PublicNavbar from '../components/PublicNavbar';
 
 interface Property {
   _id: string;
@@ -82,6 +83,7 @@ export default function PublicPropertiesCatalog({ searchParams }: PageProps) {
 
   return (
     <main className="min-h-screen bg-white text-gray-900 pb-16">
+      <PublicNavbar />
       <section className="bg-gray-50 border-b border-gray-100 py-12 px-6 text-center">
         <h1 className="text-3xl font-black tracking-tight text-gray-900">Verified Abuja Portfolios</h1>
         <p className="text-xs text-gray-400 font-semibold mt-1">Premium residential and commercial assets under active brokerage.</p>

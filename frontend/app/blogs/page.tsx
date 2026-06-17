@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import PublicNavbar from '../components/PublicNavbar';
 
 interface BlogPost {
   _id: string;
@@ -65,7 +66,7 @@ export default function PublicBlogFeed() {
 
   return (
     <main className="min-h-screen bg-white text-gray-900">
-      
+      <PublicNavbar />
       {/* 🏙️ Luxury Editorial Hero Section */}
       <section className="bg-gray-50 border-b border-gray-100 py-16 px-6 md:px-12 text-center">
         <div className="max-w-3xl mx-auto">

@@ -2,7 +2,8 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import AgentAnalyticsPanel from './components/AgentAnalyticsPanel'; // Adjust path if saved in a subfolder
+import { api } from '../../lib/api';
+import AgentAnalyticsPanel from './components/AgentAnalyticsPanel';
 
 interface Lead {
   _id: string;
@@ -30,26 +31,7 @@ export default function AgentDashboard() {
           return;
         }
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
-        
-        const res = await fetch(`${apiUrl}/api/leads`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!res.ok) {
-          if (res.status === 401 || res.status === 403) {
-            localStorage.removeItem('token');
-            router.push('/login');
-            return;
-          }
-          throw new Error('Failed to fetch lead records');
-        }
-
-        const data = await res.json();
+        const data = await api.get('/api/leads');
         setLeads(data);
       } catch (err: any) {
         setError(err.message || 'Something went wrong');
@@ -63,23 +45,10 @@ export default function AgentDashboard() {
 
   const handleStatusChange = async (leadId: string, newStatus: string) => {
     try {
-      const token = localStorage.getItem('token');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
-
-      const res = await fetch(`${apiUrl}/api/leads/${leadId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-
-      if (res.ok) {
-        setLeads(prevLeads =>
-          prevLeads.map(lead => (lead._id === leadId ? { ...lead, status: newStatus as any } : lead))
-        );
-      }
+      const data = await api.patch(`/api/leads/${leadId}`, { status: newStatus });
+      setLeads(prevLeads =>
+        prevLeads.map(lead => (lead._id === leadId ? { ...lead, status: newStatus as any } : lead))
+      );
     } catch (err) {
       console.error('Error modifying lead status context:', err);
     }

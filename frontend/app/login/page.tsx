@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { api } from '../../lib/api';
 
 export default function AgentLogin() {
   const [email, setEmail] = useState('');
@@ -22,22 +23,8 @@ export default function AgentLogin() {
     }
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
-      
       // 1. Submit authentication payload straight to your backend auth engine
-      const res = await fetch(`${apiUrl}/api/users/login`, { // Update this route if your auth path matches api/auth/login
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Authentication credentials rejected.');
-      }
+      const data = await api.post('/api/users/login', { email, password });
 
       // 2. Save the real cryptographic token string to local storage cache
       localStorage.setItem('token', data.token);

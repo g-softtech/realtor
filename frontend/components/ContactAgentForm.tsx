@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { api } from '../lib/api';
 
 export default function ContactAgentForm({ propertyId }: { propertyId: string }) {
   const [formData, setFormData] = useState({
@@ -17,19 +18,7 @@ export default function ContactAgentForm({ propertyId }: { propertyId: string })
     setStatus('loading');
 
     try {
-      // Hardcoding the backend URL to guarantee it doesn't accidentally hit the Next.js frontend
-      const backendUrl = 'http://127.0.0.1:5000/api/leads';
-      
-      const res = await fetch(backendUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, property_id: propertyId }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.text();
-        throw new Error(`Server returned ${res.status}: ${errorData}`);
-      }
+      const data = await api.post('/api/leads', { ...formData, property_id: propertyId });
       
       setStatus('success');
       setErrorMessage(null);

@@ -4,7 +4,7 @@ const { loginUser, registerUser, getUsers, deleteUser, updateUserRole } = requir
 const { protect, authorize } = require("../middleware/authMiddleware");
 
 // Maps paths to our controller actions
-router.route("/").post(registerUser).get(protect, authorize('admin'), getUsers);
+router.route("/").post(protect, authorize('admin'), registerUser).get(protect, authorize('admin'), getUsers);
 router.post("/login", loginUser);
 
 // Admin user management routes

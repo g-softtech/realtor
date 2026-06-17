@@ -36,9 +36,9 @@ const loginUser = async (req, res) => {
   }
 };
 
-// @desc    Register a new user (For initial setup/testing)
+// @desc    Create a new user (Admin Provisioning Only)
 // @route   POST /api/users
-// @access  Public
+// @access  Private/Admin
 const registerUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -48,15 +48,23 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    // Minimum password length validation
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters long" });
+    }
+
     // Hash the password before saving
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Strict role sanitization
+    const sanitizedRole = req.body.role === 'admin' ? 'admin' : 'agent';
 
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
-      role: role || "agent",
+      role: sanitizedRole,
     });
 
     if (user) {
@@ -65,7 +73,6 @@ const registerUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        token: generateToken(user._id),
       });
     } else {
       res.status(400).json({ message: "Invalid user data" });

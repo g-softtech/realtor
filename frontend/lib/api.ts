@@ -82,5 +82,15 @@ export const api = {
       headers: getAuthHeaders(false),
     });
     return handleResponse(res);
+  },
+
+  patch: async (endpoint: string, body: any) => {
+    const isFormData = body instanceof FormData;
+    const res = await fetch(`${getBaseUrl()}${endpoint}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(isFormData),
+      body: isFormData ? body : JSON.stringify(body),
+    });
+    return handleResponse(res);
   }
 };

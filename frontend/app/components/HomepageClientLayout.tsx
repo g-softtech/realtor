@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { api } from '../../lib/api';
 
 interface Property {
   _id: string;
@@ -50,19 +51,12 @@ export default function HomepageClientLayout({ initialProperties, initialBlogs }
 
     setFormStatus({ success: false, error: '', loading: true });
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
-      const res = await fetch(`${apiUrl}/api/leads`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: leadName,
-          email: leadEmail,
-          phone: leadPhone,
-          notes: leadNotes || 'Requested property consultation via landing page.'
-        })
+      const data = await api.post('/api/leads', {
+        name: leadName,
+        email: leadEmail,
+        phone: leadPhone,
+        notes: leadNotes || 'Requested property consultation via landing page.'
       });
-
-      if (!res.ok) throw new Error('Lead registration failed backend validation validation checks.');
 
       setFormStatus({ success: true, error: '', loading: false });
       setLeadName(''); setLeadEmail(''); setLeadPhone(''); setLeadNotes('');
