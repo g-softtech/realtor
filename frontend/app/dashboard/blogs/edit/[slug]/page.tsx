@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import BlogForm, { BlogData } from '../../../components/forms/BlogForm';
+import BlogForm, { BlogData } from '../../../../components/forms/BlogForm';
 import { api } from '../../../../lib/api';
 
 export default function EditBlogPost({ params }: { params: Promise<{ slug: string }> }) {
