@@ -14,8 +14,14 @@ const Lead = require("./models/Lead");
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// ⚙️ CORS MIDDLEWARE: Configured to accept traffic from port 3000 and your Vercel URL
+app.use(cors({
+  origin: ["http://localhost:3000", "https://realtor-frontend-alpha.vercel.app"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Request Logger: See exactly what hits your backend
@@ -24,17 +30,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// 1. DATABASE CONNECTION MIDDLEWARE FOR SERVERLESS
-// This ensures the database is connected before handling any incoming route requests
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (error) {
-    console.error("❌ Database Connection Handshake Failure:", error);
-    res.status(500).json({ error: "Database connection could not be established." });
-  }
-});
+// ✅ GLOBAL DATABASE CONNECTION: Connects on startup to keep the event loop alive
+connectDB()
+  .then(() => console.log("📦 MongoDB Core Engine Connected Successfully"))
+  .catch((err) => console.error("❌ Global DB Connection Failure:", err));
 
 app.get("/", (req, res) => {
   res.send("Realtor API Running 🚀");
@@ -98,12 +97,13 @@ app.use((req, res) => {
   res.status(404).json({ error: `Backend route ${req.url} does not exist.` });
 });
 
-// 2. EXPORT APP & CONDITIONAL LISTEN FOR LOCAL DEVELOPMENT
-module.exports = app; 
+// 🚀 ISOLATED PORT SETTING: Locked to 5001 locally to prevent sharing conflicts
+const PORT = 5001;
 
 if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
-    console.log(`Server running locally on port ${PORT}`);
+    console.log(`🚀 Real Estate Backend safely running on isolated port ${PORT}`);
   });
 }
+
+module.exports = app;

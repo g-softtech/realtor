@@ -72,7 +72,8 @@ const createProperty = async (req, res) => {
       bedrooms: bedrooms ? Number(bedrooms) : undefined,
       bathrooms: bathrooms ? Number(bathrooms) : undefined,
       size: size ? Number(size) : undefined,
-      district: district || undefined
+      district: district || undefined,
+      agent: req.user._id // Assign ownership to the creating user
     };
 
     const property = new Property(propertyData);
@@ -92,8 +93,123 @@ const createProperty = async (req, res) => {
   }
 };
 
+// @desc    Update a property
+// @route   PUT /api/properties/:id
+// @access  Private (Agent/Admin)
+const updateProperty = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let property = await Property.findById(id);
+
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    const { 
+      title, description, price, location, type, status, bedrooms, bathrooms, size, district
+    } = req.body;
+
+    let imageURLs = property.images;
+    if (req.files && req.files.length > 0) {
+      imageURLs = [...imageURLs, ...req.files.map(file => file.path)];
+    } else if (req.body.images) {
+      imageURLs = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+    }
+
+    property.title = title || property.title;
+    property.description = description || property.description;
+    property.price = price ? Number(price) : property.price;
+    property.location = location || property.location;
+    property.type = type || property.type;
+    property.status = status || property.status;
+    property.images = imageURLs;
+    property.bedrooms = bedrooms ? Number(bedrooms) : property.bedrooms;
+    property.bathrooms = bathrooms ? Number(bathrooms) : property.bathrooms;
+    property.size = size ? Number(size) : property.size;
+    property.district = district || property.district;
+
+    const updatedProperty = await property.save();
+    return res.json(updatedProperty);
+  } catch (error) {
+    console.error("❌ Failed to update property:", error);
+    return res.status(500).json({ message: "Server error during asset update.", error: error.message });
+  }
+};
+
+// @desc    Delete a property
+// @route   DELETE /api/properties/:id
+// @access  Private (Agent/Admin)
+const deleteProperty = async (req, res) => {
+  try {
+    const propertyId = req.params.id;
+    const deletedProperty = await Property.findByIdAndDelete(propertyId);
+    
+    if (!deletedProperty) {
+      return res.status(404).json({ message: "Property asset not found." });
+    }
+    
+    return res.json({ message: "Property asset successfully removed from portfolio." });
+  } catch (error) {
+    console.error("❌ Failed to delete property:", error);
+    return res.status(500).json({ message: "Server error during asset removal.", error: error.message });
+  }
+};
+
+// @desc    Delete a single image from a property
+// @route   DELETE /api/properties/:id/images?url=...
+// @access  Private (Agent/Admin)
+const deletePropertyImage = async (req, res) => {
+  try {
+    const propertyId = req.params.id;
+    const { url } = req.query;
+
+    if (!url) {
+      return res.status(400).json({ message: "Image URL parameter is required." });
+    }
+
+    const property = await Property.findById(propertyId);
+    if (!property) {
+      return res.status(404).json({ message: "Property asset not found." });
+    }
+
+    // 🔒 OWNERSHIP ENFORCEMENT
+    if (req.user.role === 'agent') {
+      if (!property.agent || property.agent.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: "Forbidden: You can only manage images for properties you created." });
+      }
+    }
+
+    if (!property.images.includes(url)) {
+      return res.status(400).json({ message: "Image not associated with this property." });
+    }
+
+    // 📸 CLOUDINARY EXTRACTION: Pull the public_id from the URL
+    // Format: https://res.cloudinary.com/.../upload/v1234/AbujaRealty_Properties/abcde.jpg
+    const urlParts = url.split('/');
+    const fileWithExtension = urlParts.pop(); // e.g. abcde.jpg
+    const folder = urlParts.pop(); // e.g. AbujaRealty_Properties
+    const publicId = `${folder}/${fileWithExtension.split('.')[0]}`;
+
+    // 🗑️ Trigger external cloud destruction
+    const cloudinary = require('cloudinary').v2;
+    await cloudinary.uploader.destroy(publicId);
+
+    // 🏗️ Database synchronization
+    property.images = property.images.filter(img => img !== url);
+    await property.save();
+
+    return res.json({ message: "Image asset permanently deleted.", images: property.images });
+  } catch (error) {
+    console.error("❌ Failed to delete image:", error);
+    return res.status(500).json({ message: "Server error during image removal.", error: error.message });
+  }
+};
+
 module.exports = {
   getProperties,
   getPropertyById,
   createProperty,
+  updateProperty,
+  deleteProperty,
+  deletePropertyImage,
 };
