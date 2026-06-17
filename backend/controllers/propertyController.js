@@ -183,12 +183,13 @@ const deletePropertyImage = async (req, res) => {
       return res.status(400).json({ message: "Image not associated with this property." });
     }
 
-    // 📸 CLOUDINARY EXTRACTION: Pull the public_id from the URL
-    // Format: https://res.cloudinary.com/.../upload/v1234/AbujaRealty_Properties/abcde.jpg
-    const urlParts = url.split('/');
-    const fileWithExtension = urlParts.pop(); // e.g. abcde.jpg
-    const folder = urlParts.pop(); // e.g. AbujaRealty_Properties
-    const publicId = `${folder}/${fileWithExtension.split('.')[0]}`;
+    // 📸 CLOUDINARY EXTRACTION: Robust regex capturing the entire path after /upload/
+    // This safely handles nested folders, version tags (v1234), and dots in filenames
+    const match = url.match(/\/upload\/(?:v\d+\/)?([^\.]+)/);
+    if (!match || !match[1]) {
+      return res.status(400).json({ message: "Invalid Cloudinary URL format. Could not extract public_id." });
+    }
+    const publicId = match[1];
 
     // 🗑️ Trigger external cloud destruction
     const cloudinary = require('cloudinary').v2;
