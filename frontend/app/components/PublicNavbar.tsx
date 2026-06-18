@@ -33,7 +33,7 @@ export default function PublicNavbar() {
     <>
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-[#0A0A0A]/70 border-b border-gray-100 dark:border-neutral-900 px-6 md:px-16 py-5 flex items-center justify-between transition-all">
         <Link href="/" className="text-xl font-black tracking-tighter text-gray-900 dark:text-white">
-          REALTOR<span className="text-blue-600 font-serif">.</span>
+          Cortex <span className="text-blue-600 font-serif">RealtyEngine</span>
         </Link>
         
         <div className="flex items-center gap-4 md:gap-8">

@@ -12,7 +12,7 @@ Abuja Realty Platform
 
 ### 1.2 Project Description
 
-This is a modern real estate web application designed for a realtor firm operating in Abuja, Nigeria. The platform serves as a digital property marketplace, lead generation system, and content marketing hub.
+This is a modern real estate web application designed for Cortex RealtyEngine operating in Abuja, Nigeria. The platform serves as a digital property marketplace, lead generation system, and content marketing hub.
 
 It allows users to:
 
@@ -61,7 +61,7 @@ It also provides an admin dashboard for:
 * Listing property owners
 * Agents managing multiple properties
 
-### 3.3 Admin Users (Realtor Team)
+### 3.3 Admin Users (Cortex RealtyEngine Team)
 
 * Real estate agents
 * Marketing staff

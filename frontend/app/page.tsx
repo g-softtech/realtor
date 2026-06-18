@@ -426,7 +426,7 @@ function LuxuryLandingPageContent() {
       <footer className="bg-black text-white py-12 px-6 md:px-16 border-t border-neutral-900">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="text-center sm:text-left">
-            <span className="text-base font-black tracking-tighter text-white">REALTOR<span className="text-blue-500 font-serif">.</span></span>
+            <span className="text-base font-black tracking-tighter text-white">Cortex <span className="text-blue-500 font-serif">RealtyEngine</span></span>
             <p className="text-[10px] font-bold tracking-wider text-neutral-500 uppercase mt-1">© 2026 Sovereign Portfolio Brokerage.</p>
           </div>
         </div>

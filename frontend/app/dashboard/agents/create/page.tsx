@@ -112,7 +112,7 @@ export default function CreateAgentPage() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="agent@realtor.com"
+                  placeholder="agent@cortexrealty.com"
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900"
                 />
               </div>

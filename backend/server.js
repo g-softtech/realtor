@@ -37,7 +37,7 @@ connectDB()
   .catch((err) => console.error("❌ Global DB Connection Failure:", err));
 
 app.get("/", (req, res) => {
-  res.send("Realtor API Running 🚀");
+  res.send("Cortex RealtyEngine API Running 🚀");
 });
 
 // 📊 REAL-TIME ASSET ANALYTICS AGGREGATION ENDPOINT
