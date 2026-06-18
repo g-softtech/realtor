@@ -34,16 +34,39 @@ export default function LuxuryLandingPage() {
   // Filtering States
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDistrict, setSelectedDistrict] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedType, setSelectedType] = useState('');
+
+  // Dropdown States
+  const [districts, setDistricts] = useState<string[]>([]);
+  const [types, setTypes] = useState<string[]>([]);
+
+  // Fetch Dropdown Options on Mount
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
+        const [distRes, typeRes] = await Promise.all([
+          fetch(`${apiUrl}/api/properties/filters/districts`),
+          fetch(`${apiUrl}/api/properties/filters/types`)
+        ]);
+        if (distRes.ok) setDistricts(await distRes.json());
+        if (typeRes.ok) setTypes(await typeRes.json());
+      } catch (err) {
+        console.error('Error fetching filter options:', err);
+      }
+    };
+    fetchFilters();
+  }, []);
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
         setLoading(true);
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
         const url = new URL(`${apiUrl}/api/properties`);
-        if (searchQuery) {
-          url.searchParams.append('search', searchQuery);
-        }
+        if (searchQuery) url.searchParams.append('search', searchQuery);
+        if (selectedDistrict) url.searchParams.append('district', selectedDistrict);
+        if (selectedType) url.searchParams.append('type', selectedType);
+        
         const res = await fetch(url.toString(), { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
@@ -61,13 +84,7 @@ export default function LuxuryLandingPage() {
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
-
-  const filteredProperties = properties.filter(item => {
-    const matchesDistrict = selectedDistrict ? item.location.toLowerCase().includes(selectedDistrict.toLowerCase()) : true;
-    const matchesCategory = selectedCategory ? item.category === selectedCategory : true;
-    return matchesDistrict && matchesCategory;
-  });
+  }, [searchQuery, selectedDistrict, selectedType]);
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#0A0A0A] text-gray-900 dark:text-gray-100 font-sans selection:bg-blue-600 selection:text-white transition-colors duration-300">
@@ -117,24 +134,23 @@ export default function LuxuryLandingPage() {
                   className="w-full px-3 py-3 bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:bg-white dark:focus:bg-neutral-950 text-gray-800 dark:text-neutral-200 font-bold transition-all"
                 >
                   <option value="">All Regions</option>
-                  <option value="Maitama">Maitama</option>
-                  <option value="Wuse">Wuse 2</option>
-                  <option value="Asokoro">Asokoro</option>
-                  <option value="Gwarinpa">Gwarinpa</option>
+                  {districts.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider mb-1.5">Asset Tier</label>
+                <label className="block text-[10px] font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider mb-1.5">Listing Type</label>
                 <select 
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
                   className="w-full px-3 py-3 bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:bg-white dark:focus:bg-neutral-950 text-gray-800 dark:text-neutral-200 font-bold transition-all"
                 >
-                  <option value="">All Categories</option>
-                  <option value="Real Estate Investment">Investment Tier</option>
-                  <option value="Abuja Housing Market">Standard Residential</option>
-                  <option value="Buying Guides">Buying Guides</option>
+                  <option value="">All Types</option>
+                  {types.map(t => (
+                    <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -152,7 +168,7 @@ export default function LuxuryLandingPage() {
               <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tight">Available Brokerage Assets</h2>
             </div>
             <p className="text-xs text-gray-400 dark:text-neutral-400 font-bold uppercase tracking-wider bg-gray-50 dark:bg-neutral-900 px-4 py-2 rounded-lg border border-gray-100 dark:border-neutral-800">
-              Showing {filteredProperties.length} Matching Results
+              Showing {properties.length} Matching Results
             </p>
           </div>
 
@@ -166,7 +182,7 @@ export default function LuxuryLandingPage() {
                 </div>
               ))}
             </div>
-          ) : filteredProperties.length === 0 ? (
+          ) : properties.length === 0 ? (
             <div className="text-center py-20 border-2 border-dashed border-gray-100 dark:border-neutral-800 rounded-2xl bg-gray-50/50 dark:bg-neutral-950/50">
               <span className="text-3xl block mb-2">📥</span>
               <p className="text-sm font-bold text-gray-700 dark:text-neutral-300">No Premium Assets Match Your Criteria</p>
@@ -174,7 +190,7 @@ export default function LuxuryLandingPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredProperties.map((property) => (
+              {properties.map((property) => (
                 <article key={property._id} className="group bg-white dark:bg-neutral-950 rounded-2xl overflow-hidden border border-gray-100 dark:border-neutral-900 shadow-sm hover:shadow-xl dark:hover:shadow-none hover:border-gray-200/60 dark:hover:border-neutral-800 transition-all flex flex-col justify-between">
                   <div>
                     <div className="aspect-4/3 bg-gray-50 dark:bg-neutral-900 relative overflow-hidden">

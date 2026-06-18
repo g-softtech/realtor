@@ -6,6 +6,7 @@ import Link from 'next/link';
 export interface PropertyData {
   title: string;
   location: string;
+  district?: string;
   price: string;
   description: string;
   type: string;
@@ -34,6 +35,7 @@ export default function PropertyForm({
 }: PropertyFormProps) {
   const [title, setTitle] = useState(initialData?.title || '');
   const [location, setLocation] = useState(initialData?.location || '');
+  const [district, setDistrict] = useState(initialData?.district || '');
   const [price, setPrice] = useState(initialData?.price || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [type, setType] = useState(initialData?.type || 'sale'); 
@@ -50,6 +52,7 @@ export default function PropertyForm({
     if (initialData) {
       setTitle(initialData.title);
       setLocation(initialData.location);
+      if (initialData.district) setDistrict(initialData.district);
       setPrice(initialData.price);
       setDescription(initialData.description);
       setType(initialData.type);
@@ -108,6 +111,7 @@ export default function PropertyForm({
     const formData = new FormData();
     formData.append('title', title);
     formData.append('location', location);
+    if (district) formData.append('district', district);
     formData.append('price', String(numericPrice));
     formData.append('description', description);
     formData.append('type', type);
@@ -142,14 +146,24 @@ export default function PropertyForm({
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Specific Location</label>
             <input 
               type="text" 
               value={location} 
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g., Maitama, Abuja"
+              placeholder="e.g., 15 Maitama Crescent"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Broad District</label>
+            <input 
+              type="text" 
+              value={district} 
+              onChange={(e) => setDistrict(e.target.value)}
+              placeholder="e.g., Maitama"
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900"
             />
           </div>

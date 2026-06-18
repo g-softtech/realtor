@@ -1,21 +1,42 @@
 const Property = require("../models/Property");
 
+// 🛠️ Guardrail helper for District normalization
+const normalizeDistrict = (districtStr) => {
+  if (!districtStr) return undefined;
+  // Trim spaces and Title Case (e.g., " maitama " -> "Maitama")
+  return districtStr.trim().toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+};
+
+// 🛠️ Guardrail helper for Type normalization
+const normalizeType = (typeStr) => {
+  if (!typeStr) return undefined;
+  return typeStr.trim().toLowerCase();
+};
+
 // @desc    Get all properties
 // @route   GET /api/properties
 // @access  Public
 const getProperties = async (req, res) => {
   try {
-    const { search } = req.query;
+    const { search, district, type } = req.query;
     let query = {};
+    
     if (search) {
       const sanitizedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      query = {
-        $or: [
-          { title: { $regex: sanitizedSearch, $options: "i" } },
-          { location: { $regex: sanitizedSearch, $options: "i" } }
-        ]
-      };
+      query.$or = [
+        { title: { $regex: sanitizedSearch, $options: "i" } },
+        { location: { $regex: sanitizedSearch, $options: "i" } }
+      ];
     }
+    
+    if (district && district !== 'All' && district !== '') {
+      query.district = district;
+    }
+    
+    if (type && type !== 'All' && type !== '') {
+      query.type = type;
+    }
+
     const properties = await Property.find(query);
     res.json(properties);
   } catch (error) {
@@ -76,14 +97,14 @@ const createProperty = async (req, res) => {
       description,
       price: Number(price), // Force cast string inputs safely to numbers
       location,
-      type,
+      type: normalizeType(type),
       status: status || "available",
       images: imageURLs, // Commit the complete array of image URLs straight to MongoDB
       // 📊 Map organizational analytics safely if your schema utilizes them:
       bedrooms: bedrooms ? Number(bedrooms) : undefined,
       bathrooms: bathrooms ? Number(bathrooms) : undefined,
       size: size ? Number(size) : undefined,
-      district: district || undefined,
+      district: normalizeDistrict(district),
       agent: req.user._id // Assign ownership to the creating user
     };
 
@@ -131,13 +152,16 @@ const updateProperty = async (req, res) => {
     property.description = description || property.description;
     property.price = price ? Number(price) : property.price;
     property.location = location || property.location;
-    property.type = type || property.type;
+    property.type = type ? normalizeType(type) : property.type;
     property.status = status || property.status;
     property.images = imageURLs;
     property.bedrooms = bedrooms ? Number(bedrooms) : property.bedrooms;
     property.bathrooms = bathrooms ? Number(bathrooms) : property.bathrooms;
     property.size = size ? Number(size) : property.size;
-    property.district = district || property.district;
+    
+    if (district !== undefined) {
+      property.district = normalizeDistrict(district);
+    }
 
     const updatedProperty = await property.save();
     return res.json(updatedProperty);
@@ -217,6 +241,32 @@ const deletePropertyImage = async (req, res) => {
   }
 };
 
+// @desc    Get distinct property districts
+// @route   GET /api/properties/filters/districts
+// @access  Public
+const getPropertyDistricts = async (req, res) => {
+  try {
+    const districts = await Property.distinct("district");
+    const validDistricts = districts.filter(Boolean).sort((a, b) => a.localeCompare(b)); // remove null/undefined and sort alphabetically
+    res.json(validDistricts);
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
+// @desc    Get distinct property types
+// @route   GET /api/properties/filters/types
+// @access  Public
+const getPropertyTypes = async (req, res) => {
+  try {
+    const types = await Property.distinct("type");
+    const validTypes = types.filter(Boolean).sort((a, b) => a.localeCompare(b));
+    res.json(validTypes);
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
 module.exports = {
   getProperties,
   getPropertyById,
@@ -224,4 +274,6 @@ module.exports = {
   updateProperty,
   deleteProperty,
   deletePropertyImage,
+  getPropertyDistricts,
+  getPropertyTypes,
 };
