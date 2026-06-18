@@ -7,10 +7,10 @@ const normalizeDistrict = (districtStr) => {
   return districtStr.trim().toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
 };
 
-// 🛠️ Guardrail helper for Type normalization
-const normalizeType = (typeStr) => {
-  if (!typeStr) return undefined;
-  return typeStr.trim().toLowerCase();
+// 🛠️ Guardrail helper for Purpose/PropertyType normalization
+const normalizeString = (str) => {
+  if (!str) return undefined;
+  return str.trim().toLowerCase();
 };
 
 // @desc    Get all properties
@@ -18,27 +18,101 @@ const normalizeType = (typeStr) => {
 // @access  Public
 const getProperties = async (req, res) => {
   try {
-    const { search, district, type } = req.query;
-    let query = {};
+    const { search, district, purpose, propertyType, minPrice, maxPrice, bedrooms, sort, page = 1, limit = 10 } = req.query;
     
+    // Pagination Params
+    let pageNum = parseInt(page, 10);
+    let limitNum = parseInt(limit, 10);
+    if (isNaN(pageNum) || pageNum < 1) pageNum = 1;
+    if (isNaN(limitNum) || limitNum < 1) limitNum = 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    // Filter Params
+    let matchStage = {};
+    if (district && district !== 'All' && district !== '') matchStage.district = district;
+    if (purpose && purpose !== 'All' && purpose !== '') matchStage.purpose = purpose;
+    if (propertyType && propertyType !== 'All' && propertyType !== '') matchStage.propertyType = propertyType;
+    
+    // Numeric Filters
+    if (bedrooms && bedrooms !== 'All' && bedrooms !== '') {
+      const bedsNum = Number(bedrooms);
+      if (!isNaN(bedsNum)) {
+        matchStage.bedrooms = { $gte: bedsNum };
+      }
+    }
+    
+    if (minPrice || maxPrice) {
+      matchStage.price = {};
+      if (minPrice && !isNaN(Number(minPrice))) matchStage.price.$gte = Number(minPrice);
+      if (maxPrice && !isNaN(Number(maxPrice))) matchStage.price.$lte = Number(maxPrice);
+      if (Object.keys(matchStage.price).length === 0) delete matchStage.price;
+    }
+    
+    // Sorting Params (No relevance sorting yet, industry standard Newest/Price)
+    let sortStage = { createdAt: -1 }; // Default: Newest
+    if (sort === 'price-asc') sortStage = { price: 1 };
+    else if (sort === 'price-desc') sortStage = { price: -1 };
+
+    let data = [];
+    let totalItems = 0;
+
     if (search) {
-      const sanitizedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      query.$or = [
-        { title: { $regex: sanitizedSearch, $options: "i" } },
-        { location: { $regex: sanitizedSearch, $options: "i" } }
+      // 🚀 PHASE 2: Try Atlas Search Pipeline (Industry Standard for Fuzzy/Relevance)
+      let pipeline = [
+        {
+          $search: {
+            index: "default",
+            text: {
+              query: search,
+              path: ["title", "location", "district"],
+              fuzzy: { maxEdits: 2, prefixLength: 1 }
+            }
+          }
+        }
       ];
-    }
-    
-    if (district && district !== 'All' && district !== '') {
-      query.district = district;
-    }
-    
-    if (type && type !== 'All' && type !== '') {
-      query.type = type;
+
+      if (Object.keys(matchStage).length > 0) {
+        pipeline.push({ $match: matchStage });
+      }
+
+      pipeline.push({ $sort: sortStage });
+
+      pipeline.push({
+        $facet: {
+          data: [{ $skip: skip }, { $limit: limitNum }],
+          totalCount: [{ $count: "count" }]
+        }
+      });
+
+      try {
+        const results = await Property.aggregate(pipeline);
+        data = results[0].data;
+        totalItems = results[0].totalCount[0] ? results[0].totalCount[0].count : 0;
+      } catch (err) {
+        // Fallback to MongoDB native $text index if Atlas is unavailable
+        console.warn("Atlas Search missing or failed. Falling back to native $text index.");
+        const fallbackQuery = { ...matchStage, $text: { $search: search } };
+        totalItems = await Property.countDocuments(fallbackQuery);
+        data = await Property.find(fallbackQuery)
+          .sort(sortStage)
+          .skip(skip)
+          .limit(limitNum);
+      }
+    } else {
+      // Standard database fetch without text search
+      totalItems = await Property.countDocuments(matchStage);
+      data = await Property.find(matchStage).sort(sortStage).skip(skip).limit(limitNum);
     }
 
-    const properties = await Property.find(query);
-    res.json(properties);
+    const totalPages = Math.ceil(totalItems / limitNum);
+
+    // 🚀 PHASE 3: Unified paginated API contract structure
+    res.json({
+      data,
+      page: pageNum,
+      totalPages: totalPages === 0 ? 1 : totalPages,
+      totalItems
+    });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
@@ -74,12 +148,14 @@ const createProperty = async (req, res) => {
       description, 
       price, 
       location, 
-      type, 
+      purpose,
+      propertyType, 
       status,
       bedrooms,
       bathrooms,
       size,
-      district
+      district,
+      isFeatured
     } = req.body;
     
     // 📸 Extract secure cloud host URLs from req.files array populated by Multer
@@ -97,8 +173,9 @@ const createProperty = async (req, res) => {
       description,
       price: Number(price), // Force cast string inputs safely to numbers
       location,
-      type: normalizeType(type),
-      status: status || "available",
+      purpose: normalizeString(purpose),
+      propertyType: normalizeString(propertyType),
+      status: status || "Available",
       images: imageURLs, // Commit the complete array of image URLs straight to MongoDB
       // 📊 Map organizational analytics safely if your schema utilizes them:
       bedrooms: bedrooms ? Number(bedrooms) : undefined,
@@ -107,6 +184,11 @@ const createProperty = async (req, res) => {
       district: normalizeDistrict(district),
       agent: req.user._id // Assign ownership to the creating user
     };
+    
+    // 🔒 RBAC Check for Featured Flag
+    if (isFeatured && req.user && req.user.role === 'admin') {
+      propertyData.isFeatured = isFeatured === 'true' || isFeatured === true;
+    }
 
     const property = new Property(propertyData);
     const createdProperty = await property.save();
@@ -138,7 +220,7 @@ const updateProperty = async (req, res) => {
     }
 
     const { 
-      title, description, price, location, type, status, bedrooms, bathrooms, size, district
+      title, description, price, location, purpose, propertyType, status, bedrooms, bathrooms, size, district, isFeatured
     } = req.body;
 
     let imageURLs = property.images;
@@ -152,7 +234,8 @@ const updateProperty = async (req, res) => {
     property.description = description || property.description;
     property.price = price ? Number(price) : property.price;
     property.location = location || property.location;
-    property.type = type ? normalizeType(type) : property.type;
+    property.purpose = purpose ? normalizeString(purpose) : property.purpose;
+    property.propertyType = propertyType ? normalizeString(propertyType) : property.propertyType;
     property.status = status || property.status;
     property.images = imageURLs;
     property.bedrooms = bedrooms ? Number(bedrooms) : property.bedrooms;
@@ -161,6 +244,11 @@ const updateProperty = async (req, res) => {
     
     if (district !== undefined) {
       property.district = normalizeDistrict(district);
+    }
+
+    // 🔒 RBAC Check for Featured Flag
+    if (isFeatured !== undefined && req.user && req.user.role === 'admin') {
+      property.isFeatured = isFeatured === 'true' || isFeatured === true;
     }
 
     const updatedProperty = await property.save();
@@ -254,12 +342,25 @@ const getPropertyDistricts = async (req, res) => {
   }
 };
 
+// @desc    Get distinct property purposes
+// @route   GET /api/properties/filters/purposes
+// @access  Public
+const getPropertyPurposes = async (req, res) => {
+  try {
+    const purposes = await Property.distinct("purpose");
+    const validPurposes = purposes.filter(Boolean).sort((a, b) => a.localeCompare(b));
+    res.json(validPurposes);
+  } catch (error) {
+    res.status(500).json({ message: "Server Error", error: error.message });
+  }
+};
+
 // @desc    Get distinct property types
-// @route   GET /api/properties/filters/types
+// @route   GET /api/properties/filters/propertyTypes
 // @access  Public
 const getPropertyTypes = async (req, res) => {
   try {
-    const types = await Property.distinct("type");
+    const types = await Property.distinct("propertyType");
     const validTypes = types.filter(Boolean).sort((a, b) => a.localeCompare(b));
     res.json(validTypes);
   } catch (error) {
@@ -275,5 +376,6 @@ module.exports = {
   deleteProperty,
   deletePropertyImage,
   getPropertyDistricts,
+  getPropertyPurposes,
   getPropertyTypes,
 };

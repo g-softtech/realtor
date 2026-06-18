@@ -49,7 +49,8 @@ export default function PropertyManagement() {
           api.get('/api/leads')
         ]);
 
-        setProperties(propData);
+        // 🚀 Extract data array from the new unified paginated structure
+        setProperties(propData.data || propData);
         setLeads(leadData);
       } catch (err: any) {
         setError(err.message || 'Error pulling network assets.');

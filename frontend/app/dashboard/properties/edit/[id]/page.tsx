@@ -25,7 +25,11 @@ export default function EditProperty({ params }: { params: Promise<{ id: string 
           location: data.location || '',
           price: data.price ? String(data.price) : '',
           description: data.description || '',
-          type: data.type || 'sale',
+          purpose: data.purpose || 'sale',
+          propertyType: data.propertyType || 'apartment',
+          bedrooms: data.bedrooms || undefined,
+          bathrooms: data.bathrooms || undefined,
+          size: data.size || undefined,
           status: data.status || 'Available',
           images: data.images || []
         });

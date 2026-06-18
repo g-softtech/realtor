@@ -39,7 +39,8 @@ export default function PublicPropertiesCatalog({ searchParams }: PageProps) {
         if (!res.ok) throw new Error('Could not pull listings from database cluster.');
         
         const data = await res.json();
-        setProperties(data);
+        // 🚀 Ensure compatibility with unified paginated API format
+        setProperties(data.data || data);
         
         // Run deep structural optimization pass
         applyInitialFilters(data, resolvedParams.location || 'All', resolvedParams.type || 'All', resolvedParams.layout || 'All');

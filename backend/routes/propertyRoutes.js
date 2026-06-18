@@ -7,7 +7,8 @@ const upload = require('../config/storage'); // 🚀 Import your cloud storage e
 // Route: /api/properties
 router.get('/', getProperties); // 🔓 PUBLIC: House hunters can browse listings freely
 router.get('/filters/districts', require('../controllers/propertyController').getPropertyDistricts);
-router.get('/filters/types', require('../controllers/propertyController').getPropertyTypes);
+router.get('/filters/purposes', require('../controllers/propertyController').getPropertyPurposes);
+router.get('/filters/propertyTypes', require('../controllers/propertyController').getPropertyTypes);
 router.get('/:id', getPropertyById); // 🔓 PUBLIC: Detailed view is accessible to everyone
 
 // 🔒 SECURED: Intercept with upload.array('images', 10) to stream up to 10 photos securely to the cloud

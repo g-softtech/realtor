@@ -9,8 +9,13 @@ export interface PropertyData {
   district?: string;
   price: string;
   description: string;
-  type: string;
+  purpose: string;
+  propertyType: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  size?: number;
   status: string;
+  isFeatured?: boolean;
   images?: string[]; // Existing images (Cloudinary URLs)
 }
 
@@ -38,8 +43,13 @@ export default function PropertyForm({
   const [district, setDistrict] = useState(initialData?.district || '');
   const [price, setPrice] = useState(initialData?.price || '');
   const [description, setDescription] = useState(initialData?.description || '');
-  const [type, setType] = useState(initialData?.type || 'sale'); 
+  const [purpose, setPurpose] = useState(initialData?.purpose || 'sale'); 
+  const [propertyType, setPropertyType] = useState(initialData?.propertyType || 'duplex'); 
+  const [bedrooms, setBedrooms] = useState(initialData?.bedrooms?.toString() || ''); 
+  const [bathrooms, setBathrooms] = useState(initialData?.bathrooms?.toString() || ''); 
+  const [size, setSize] = useState(initialData?.size?.toString() || ''); 
   const [status, setStatus] = useState(initialData?.status || 'Available'); 
+  const [isFeatured, setIsFeatured] = useState(initialData?.isFeatured || false);
   
   const [existingImages, setExistingImages] = useState<string[]>(initialData?.images || []);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -55,7 +65,12 @@ export default function PropertyForm({
       if (initialData.district) setDistrict(initialData.district);
       setPrice(initialData.price);
       setDescription(initialData.description);
-      setType(initialData.type);
+      setPurpose(initialData.purpose);
+      setPropertyType(initialData.propertyType);
+      if (initialData.bedrooms) setBedrooms(initialData.bedrooms.toString());
+      if (initialData.bathrooms) setBathrooms(initialData.bathrooms.toString());
+      if (initialData.size) setSize(initialData.size.toString());
+      if (initialData.isFeatured) setIsFeatured(initialData.isFeatured);
       setStatus(initialData.status);
       setExistingImages(initialData.images || []);
     }
@@ -114,8 +129,13 @@ export default function PropertyForm({
     if (district) formData.append('district', district);
     formData.append('price', String(numericPrice));
     formData.append('description', description);
-    formData.append('type', type);
+    formData.append('purpose', purpose);
+    formData.append('propertyType', propertyType);
+    if (bedrooms) formData.append('bedrooms', bedrooms);
+    if (bathrooms) formData.append('bathrooms', bathrooms);
+    if (size) formData.append('size', size);
     formData.append('status', status);
+    formData.append('isFeatured', String(isFeatured));
 
     selectedImages.forEach((imageFile) => {
       formData.append('images', imageFile);
@@ -181,17 +201,76 @@ export default function PropertyForm({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Listing Type</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Purpose</label>
             <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
+              value={purpose}
+              onChange={(e) => setPurpose(e.target.value)}
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900"
             >
               <option value="sale">For Sale</option>
               <option value="rent">For Rent</option>
-              <option value="land">Land Property</option>
+              <option value="short-let">Short-Let</option>
             </select>
           </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Property Type</label>
+            <select
+              value={propertyType}
+              onChange={(e) => setPropertyType(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900"
+            >
+              <option value="duplex">Duplex</option>
+              <option value="detached-duplex">Detached Duplex</option>
+              <option value="semi-detached-duplex">Semi-Detached Duplex</option>
+              <option value="terrace">Terrace</option>
+              <option value="bungalow">Bungalow</option>
+              <option value="apartment">Apartment</option>
+              <option value="penthouse">Penthouse</option>
+              <option value="mansion">Mansion</option>
+              <option value="commercial">Commercial</option>
+              <option value="office">Office</option>
+              <option value="warehouse">Warehouse</option>
+              <option value="land">Land</option>
+              <option value="mixed-use">Mixed-Use</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Bedrooms</label>
+            <input 
+              type="number" 
+              value={bedrooms} 
+              onChange={(e) => setBedrooms(e.target.value)}
+              placeholder="e.g., 4"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Bathrooms</label>
+            <input 
+              type="number" 
+              value={bathrooms} 
+              onChange={(e) => setBathrooms(e.target.value)}
+              placeholder="e.g., 5"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Size (sqm)</label>
+            <input 
+              type="number" 
+              value={size} 
+              onChange={(e) => setSize(e.target.value)}
+              placeholder="e.g., 500"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-gray-900"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Market Status</label>
             <select
@@ -203,6 +282,19 @@ export default function PropertyForm({
               <option value="Pending">Pending</option>
               <option value="Sold">Sold</option>
             </select>
+          </div>
+          
+          <div className="flex items-center space-x-3 mt-8">
+            <input 
+              type="checkbox" 
+              id="isFeatured"
+              checked={isFeatured}
+              onChange={(e) => setIsFeatured(e.target.checked)}
+              className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="isFeatured" className="text-sm font-bold text-gray-700">
+              Feature on Homepage (Admin Only)
+            </label>
           </div>
         </div>
 
