@@ -187,7 +187,8 @@ function LuxuryLandingPageContent() {
   }, [loading, loadingMore, hasMore]);
 
   // Reusable Filter UI
-  const FilterControls = () => (
+  // Note: Defined as a JSX variable (not a React component function) to prevent React from unmounting it on every re-render and losing focus!
+  const filterControlsUI = (
     <div className="space-y-4">
       <div>
         <label className="block text-[10px] font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider mb-1.5">Keyword Search</label>
@@ -324,7 +325,7 @@ function LuxuryLandingPageContent() {
         {/* 🔍 DESKTOP FILTER CARD */}
         <div className="hidden lg:block lg:col-span-5 bg-white dark:bg-neutral-950 border border-gray-100 dark:border-neutral-900 rounded-2xl p-6 md:p-8 shadow-xl shadow-gray-100/50 dark:shadow-none">
           <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider mb-4">Portfolio Selection</h3>
-          <FilterControls />
+          {filterControlsUI}
         </div>
       </section>
 
@@ -347,7 +348,7 @@ function LuxuryLandingPageContent() {
               <h3 className="text-lg font-black uppercase tracking-wider">Filters</h3>
               <button onClick={() => setIsMobileDrawerOpen(false)} className="w-8 h-8 flex items-center justify-center bg-gray-100 dark:bg-neutral-900 rounded-full font-bold">✕</button>
             </div>
-            <FilterControls />
+            {filterControlsUI}
             <button onClick={() => setIsMobileDrawerOpen(false)} className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl mt-8 shadow-lg">
               Apply Filters
             </button>
