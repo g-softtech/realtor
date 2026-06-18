@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import PublicNavbar from './components/PublicNavbar';
@@ -21,7 +21,7 @@ interface Property {
   isFeatured?: boolean;
 }
 
-export default function LuxuryLandingPage() {
+function LuxuryLandingPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -431,5 +431,17 @@ export default function LuxuryLandingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function LuxuryLandingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] dark:bg-[#0A0A0A]">
+        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+    }>
+      <LuxuryLandingPageContent />
+    </Suspense>
   );
 }
