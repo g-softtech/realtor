@@ -11,12 +11,12 @@ export default function AddBlogPost() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleSubmit = async (formData: FormData) => {
+  const handleSubmit = async (payload: any) => {
     setLoading(true);
     setError('');
 
     try {
-      await api.post('/api/blogs', formData);
+      await api.post('/api/blogs', payload);
       router.push('/dashboard/blogs');
     } catch (err: any) {
       setError(err.message || 'Network synchronization failure.');

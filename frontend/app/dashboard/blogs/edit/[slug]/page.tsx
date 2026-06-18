@@ -39,12 +39,12 @@ export default function EditBlogPost({ params }: { params: Promise<{ slug: strin
     if (blogSlug) fetchBlog();
   }, [blogSlug]);
 
-  const handleSubmit = async (formData: FormData) => {
+  const handleSubmit = async (payload: any) => {
     setLoading(true);
     setError('');
 
     try {
-      await api.put(`/api/blogs/${blogId}`, formData);
+      await api.put(`/api/blogs/${blogId}`, payload);
       router.push('/dashboard/blogs');
     } catch (err: any) {
       setError(err.message || 'Network synchronization failure.');
