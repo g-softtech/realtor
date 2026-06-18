@@ -21,7 +21,7 @@ export interface PropertyData {
 
 interface PropertyFormProps {
   initialData?: PropertyData;
-  onSubmit: (formData: FormData) => Promise<void>;
+  onSubmit: (payload: any) => Promise<void>;
   onDeleteExistingImage?: (imageUrl: string) => Promise<void>;
   onCancelHref: string;
   loading: boolean;
@@ -108,6 +108,15 @@ export default function PropertyForm({
     }
   };
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError('');
@@ -123,25 +132,29 @@ export default function PropertyForm({
       return;
     }
 
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('location', location);
-    if (district) formData.append('district', district);
-    formData.append('price', String(numericPrice));
-    formData.append('description', description);
-    formData.append('purpose', purpose);
-    formData.append('propertyType', propertyType);
-    if (bedrooms) formData.append('bedrooms', bedrooms);
-    if (bathrooms) formData.append('bathrooms', bathrooms);
-    if (size) formData.append('size', size);
-    formData.append('status', status);
-    formData.append('isFeatured', String(isFeatured));
+    // 🚀 Convert all selected image files into Base64 strings to bypass Vercel serverless stream limitations
+    const base64Images = await Promise.all(selectedImages.map(fileToBase64));
 
-    selectedImages.forEach((imageFile) => {
-      formData.append('images', imageFile);
-    });
+    // Combine existing cloud URLs with new base64 strings
+    const allImages = [...existingImages, ...base64Images];
 
-    await onSubmit(formData);
+    const payload = {
+      title,
+      location,
+      district: district || undefined,
+      price: numericPrice,
+      description,
+      purpose,
+      propertyType,
+      bedrooms: bedrooms ? Number(bedrooms) : undefined,
+      bathrooms: bathrooms ? Number(bathrooms) : undefined,
+      size: size ? Number(size) : undefined,
+      status,
+      isFeatured: Boolean(isFeatured),
+      images: allImages
+    };
+
+    await onSubmit(payload);
   };
 
   const displayError = error || localError;

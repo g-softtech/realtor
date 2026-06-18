@@ -1,4 +1,14 @@
 const Blog = require('../models/Blog');
+const cloudinary = require('cloudinary').v2;
+
+// Configure Cloudinary manually for controller access
+if (process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
 
 // @desc    Get all published blog posts
 // @route   GET /api/blogs
@@ -37,12 +47,24 @@ const createBlog = async (req, res) => {
   try {
     const { title, content, category, meta_description, cover_image, published } = req.body;
 
+    let uploadedImageUrl = cover_image;
+
+    // 📸 Upload base64 string directly to Cloudinary (Bypassing Vercel/Multer stream destruction)
+    if (cover_image && cover_image.startsWith('data:image')) {
+      const uploadRes = await cloudinary.uploader.upload(cover_image, {
+        folder: 'AbujaRealty_Blogs',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 1200, crop: 'limit', quality: 'auto' }]
+      });
+      uploadedImageUrl = uploadRes.secure_url;
+    }
+
     const blog = new Blog({
       title,
       content,
       category,
       meta_description,
-      cover_image,
+      cover_image: uploadedImageUrl,
       published,
       author: req.user._id // Automatically binds the logging agent's ID node
     });
@@ -72,11 +94,18 @@ const updateBlog = async (req, res) => {
       return res.status(403).json({ message: "Not authorized to update this article" });
     }
 
-    const { title, content, category, meta_description, published } = req.body;
+    const { title, content, category, meta_description, published, cover_image: incomingCoverImage } = req.body;
     let cover_image = blog.cover_image;
 
-    if (req.file) {
-      cover_image = req.file.path;
+    if (incomingCoverImage && incomingCoverImage.startsWith('data:image')) {
+      const uploadRes = await cloudinary.uploader.upload(incomingCoverImage, {
+        folder: 'AbujaRealty_Blogs',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 1200, crop: 'limit', quality: 'auto' }]
+      });
+      cover_image = uploadRes.secure_url;
+    } else if (incomingCoverImage) {
+      cover_image = incomingCoverImage;
     }
 
     blog.title = title || blog.title;

@@ -11,11 +11,11 @@ router.get('/filters/purposes', require('../controllers/propertyController').get
 router.get('/filters/propertyTypes', require('../controllers/propertyController').getPropertyTypes);
 router.get('/:id', getPropertyById); // 🔓 PUBLIC: Detailed view is accessible to everyone
 
-// 🔒 SECURED: Intercept with upload.array('images', 10) to stream up to 10 photos securely to the cloud
-router.post('/', protect, authorize('agent', 'admin'), upload.array('images', 10), createProperty);
+// 🔒 SECURED: Process application/json payload directly
+router.post('/', protect, authorize('agent', 'admin'), createProperty);
 
 // 🔒 SECURED: UPDATE PROPERTY ROUTE
-router.put('/:id', protect, authorize('agent', 'admin'), upload.array('images', 10), updateProperty);
+router.put('/:id', protect, authorize('agent', 'admin'), updateProperty);
 
 // 🗑️ DELETE PROPERTY IMAGE ROUTE
 router.delete("/:id/images", protect, authorize('agent', 'admin'), deletePropertyImage);

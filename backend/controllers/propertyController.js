@@ -1,4 +1,14 @@
 const Property = require("../models/Property");
+const cloudinary = require('cloudinary').v2;
+
+// Configure Cloudinary manually for controller access
+if (process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
 
 // 🛠️ Guardrail helper for District normalization
 const normalizeDistrict = (districtStr) => {
@@ -155,16 +165,36 @@ const createProperty = async (req, res) => {
       bathrooms,
       size,
       district,
-      isFeatured
+      isFeatured,
+      images
     } = req.body;
     
-    // 📸 Extract secure cloud host URLs from req.files array populated by Multer
+    // 📸 Upload base64 strings directly to Cloudinary (Bypassing Vercel/Multer stream destruction)
     let imageURLs = [];
-    if (req.files && req.files.length > 0) {
-      imageURLs = req.files.map(file => file.path);
-    } else if (req.body.images) {
-      // Fallback mechanism in case images are passed as a raw array or text fallback string
-      imageURLs = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+    if (images && Array.isArray(images)) {
+      for (const img of images) {
+        if (img.startsWith('data:image')) {
+          const uploadRes = await cloudinary.uploader.upload(img, {
+            folder: 'AbujaRealty_Properties',
+            allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+            transformation: [{ width: 1200, crop: 'limit', quality: 'auto' }]
+          });
+          imageURLs.push(uploadRes.secure_url);
+        } else {
+          imageURLs.push(img); // Handle existing or plain string fallback
+        }
+      }
+    } else if (images && typeof images === 'string') {
+      if (images.startsWith('data:image')) {
+        const uploadRes = await cloudinary.uploader.upload(images, {
+          folder: 'AbujaRealty_Properties',
+          allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+          transformation: [{ width: 1200, crop: 'limit', quality: 'auto' }]
+        });
+        imageURLs.push(uploadRes.secure_url);
+      } else {
+        imageURLs.push(images);
+      }
     }
 
     // 🏗️ Build the full data document map respecting data type casting
@@ -220,14 +250,35 @@ const updateProperty = async (req, res) => {
     }
 
     const { 
-      title, description, price, location, purpose, propertyType, status, bedrooms, bathrooms, size, district, isFeatured
+      title, description, price, location, purpose, propertyType, status, bedrooms, bathrooms, size, district, isFeatured, images
     } = req.body;
 
-    let imageURLs = property.images;
-    if (req.files && req.files.length > 0) {
-      imageURLs = [...imageURLs, ...req.files.map(file => file.path)];
-    } else if (req.body.images) {
-      imageURLs = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+    let imageURLs = property.images || [];
+    
+    if (images && Array.isArray(images)) {
+      for (const img of images) {
+        if (img.startsWith('data:image')) {
+          const uploadRes = await cloudinary.uploader.upload(img, {
+            folder: 'AbujaRealty_Properties',
+            allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+            transformation: [{ width: 1200, crop: 'limit', quality: 'auto' }]
+          });
+          imageURLs.push(uploadRes.secure_url);
+        } else if (!imageURLs.includes(img)) {
+          imageURLs.push(img);
+        }
+      }
+    } else if (images && typeof images === 'string') {
+      if (images.startsWith('data:image')) {
+        const uploadRes = await cloudinary.uploader.upload(images, {
+          folder: 'AbujaRealty_Properties',
+          allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+          transformation: [{ width: 1200, crop: 'limit', quality: 'auto' }]
+        });
+        imageURLs.push(uploadRes.secure_url);
+      } else if (!imageURLs.includes(images)) {
+        imageURLs.push(images);
+      }
     }
 
     property.title = title || property.title;
@@ -315,7 +366,6 @@ const deletePropertyImage = async (req, res) => {
     const publicId = match[1];
 
     // 🗑️ Trigger external cloud destruction
-    const cloudinary = require('cloudinary').v2;
     await cloudinary.uploader.destroy(publicId);
 
     // 🏗️ Database synchronization

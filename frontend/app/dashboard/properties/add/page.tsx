@@ -11,12 +11,12 @@ export default function AddProperty() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  const handleSubmit = async (formData: FormData) => {
+  const handleSubmit = async (payload: any) => {
     setLoading(true);
     setError('');
 
     try {
-      await api.post('/api/properties', formData);
+      await api.post('/api/properties', payload);
       router.push('/dashboard/properties');
     } catch (err: any) {
       setError(err.message || 'Network sync disruption occurred.');

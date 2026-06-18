@@ -97,6 +97,19 @@ app.use((req, res) => {
   res.status(404).json({ error: `Backend route ${req.url} does not exist.` });
 });
 
+// 🚨 GLOBAL ERROR HANDLER
+app.use((err, req, res, next) => {
+  console.error("🚨 GLOBAL EXPRESS ERROR CAUGHT:");
+  console.error("Name:", err.name);
+  console.error("Message:", err.message);
+  console.error("Stack:", err.stack);
+  res.status(500).json({ 
+    message: "A server error occurred.", 
+    errorName: err.name,
+    errorMessage: err.message 
+  });
+});
+
 // 🚀 ISOLATED PORT SETTING: Locked to 5001 locally to prevent sharing conflicts
 const PORT = 5001;
 

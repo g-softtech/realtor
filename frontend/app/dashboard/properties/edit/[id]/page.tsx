@@ -45,12 +45,12 @@ export default function EditProperty({ params }: { params: Promise<{ id: string 
     }
   }, [propertyId]);
 
-  const handleSubmit = async (formData: FormData) => {
+  const handleSubmit = async (payload: any) => {
     setLoading(true);
     setError('');
 
     try {
-      await api.put(`/api/properties/${propertyId}`, formData);
+      await api.put(`/api/properties/${propertyId}`, payload);
       router.push('/dashboard/properties');
     } catch (err: any) {
       setError(err.message || 'Network sync disruption occurred.');

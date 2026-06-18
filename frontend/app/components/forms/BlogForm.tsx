@@ -14,7 +14,7 @@ export interface BlogData {
 
 interface BlogFormProps {
   initialData?: BlogData;
-  onSubmit: (formData: FormData) => Promise<void>;
+  onSubmit: (payload: any) => Promise<void>;
   onCancelHref: string;
   loading: boolean;
   submitLabel: string;
@@ -101,17 +101,29 @@ export default function BlogForm({
       return;
     }
 
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('category', category);
-    formData.append('meta_description', metaDescription);
-    formData.append('content', content);
-    
+    const fileToBase64 = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+      });
+    };
+
+    let base64Image = null;
     if (coverImage) {
-      formData.append('cover_image', coverImage);
+      base64Image = await fileToBase64(coverImage);
     }
 
-    await onSubmit(formData);
+    const payload = {
+      title,
+      category,
+      meta_description: metaDescription,
+      content,
+      cover_image: base64Image
+    };
+
+    await onSubmit(payload);
   };
 
   const displayError = error || localError;
