@@ -67,46 +67,19 @@ const getProperties = async (req, res) => {
     let totalItems = 0;
 
     if (search) {
-      // 🚀 PHASE 2: Try Atlas Search Pipeline (Industry Standard for Fuzzy/Relevance)
-      let pipeline = [
-        {
-          $search: {
-            index: "default",
-            text: {
-              query: search,
-              path: ["title", "location", "district"],
-              fuzzy: { maxEdits: 2, prefixLength: 1 }
-            }
-          }
-        }
-      ];
-
-      if (Object.keys(matchStage).length > 0) {
-        pipeline.push({ $match: matchStage });
-      }
-
-      pipeline.push({ $sort: sortStage });
-
-      pipeline.push({
-        $facet: {
-          data: [{ $skip: skip }, { $limit: limitNum }],
-          totalCount: [{ $count: "count" }]
-        }
-      });
-
+      // 🚀 Native MongoDB Text Search (Uses the $text index defined in Property.js)
+      const searchQuery = { ...matchStage, $text: { $search: search } };
+      
       try {
-        const results = await Property.aggregate(pipeline);
-        data = results[0].data;
-        totalItems = results[0].totalCount[0] ? results[0].totalCount[0].count : 0;
-      } catch (err) {
-        // Fallback to MongoDB native $text index if Atlas is unavailable
-        console.warn("Atlas Search missing or failed. Falling back to native $text index.");
-        const fallbackQuery = { ...matchStage, $text: { $search: search } };
-        totalItems = await Property.countDocuments(fallbackQuery);
-        data = await Property.find(fallbackQuery)
+        totalItems = await Property.countDocuments(searchQuery);
+        data = await Property.find(searchQuery)
           .sort(sortStage)
           .skip(skip)
           .limit(limitNum);
+      } catch (err) {
+        console.error("❌ Text Search Error:", err);
+        data = [];
+        totalItems = 0;
       }
     } else {
       // Standard database fetch without text search
