@@ -5,7 +5,18 @@ const Property = require("../models/Property");
 // @access  Public
 const getProperties = async (req, res) => {
   try {
-    const properties = await Property.find({});
+    const { search } = req.query;
+    let query = {};
+    if (search) {
+      const sanitizedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query = {
+        $or: [
+          { title: { $regex: sanitizedSearch, $options: "i" } },
+          { location: { $regex: sanitizedSearch, $options: "i" } }
+        ]
+      };
+    }
+    const properties = await Property.find(query);
     res.json(properties);
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });

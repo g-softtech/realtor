@@ -38,8 +38,13 @@ export default function LuxuryLandingPage() {
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
+        setLoading(true);
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
-        const res = await fetch(`${apiUrl}/api/properties`, { cache: 'no-store' });
+        const url = new URL(`${apiUrl}/api/properties`);
+        if (searchQuery) {
+          url.searchParams.append('search', searchQuery);
+        }
+        const res = await fetch(url.toString(), { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setProperties(data);
@@ -50,15 +55,18 @@ export default function LuxuryLandingPage() {
         setLoading(false);
       }
     };
-    fetchCatalog();
-  }, []);
+
+    const delayDebounceFn = setTimeout(() => {
+      fetchCatalog();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
 
   const filteredProperties = properties.filter(item => {
-    const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          item.location.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesDistrict = selectedDistrict ? item.location.toLowerCase().includes(selectedDistrict.toLowerCase()) : true;
     const matchesCategory = selectedCategory ? item.category === selectedCategory : true;
-    return matchesSearch && matchesDistrict && matchesCategory;
+    return matchesDistrict && matchesCategory;
   });
 
   return (
@@ -84,7 +92,7 @@ export default function LuxuryLandingPage() {
         {/* 🔍 FILTER CONTROL CARD */}
         <div className="lg:col-span-5 bg-white dark:bg-neutral-950 border border-gray-100 dark:border-neutral-900 rounded-2xl p-6 md:p-8 shadow-xl shadow-gray-100/50 dark:shadow-none space-y-5">
           <div>
-            <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">Refine Portfolio Selection</h3>
+            <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">Portfolio Selection</h3>
             <p className="text-xs text-gray-400 dark:text-neutral-500 mt-0.5 font-medium">Filter verified residential assets instantly.</p>
           </div>
 
